@@ -48,7 +48,7 @@ void setup() {
 
 void loop() {
     int sensorValue = analogRead(SENSOR);
-    Serial.print("temp: ");
+    Serial.print("sensor: ");
     Serial.print(sensorValue);
 
     if (sensorValue < SENSOR_FAULT) {
@@ -64,7 +64,7 @@ void loop() {
 
         if (regulatorValue > 0) {
             long mappedRegulatorValue = mapToSensorValue(regulatorValue);
-            Serial.print("  mapped: ");
+            Serial.print("  mappedRegulator: ");
             Serial.print(mappedRegulatorValue);
 
             if (sensorValue - HYSTERESIS >= mappedRegulatorValue) {
