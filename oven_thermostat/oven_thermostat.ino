@@ -1,19 +1,30 @@
 
+#include <util/delay.h>
 
-const byte VAR_RESISTOR = A0;
-const byte THERMO_RESISTOR = A1;
-const byte HEATER_VT = 4;
-const byte FAULT_LED = 3;
 
-const int VAR_RESIST_MIN = 0;
-const int VAR_RESIST_MAX = 1023;
+// Pin config for Arduino (ATmega328P):
+#define VAR_RESISTOR A0
+#define THERMO_RESISTOR A1
+#define HEATER_VT 2
+#define FAULT_LED 3
 
-const int THERMO_RESIST_FAULT = 300; // ниже этого значения считаем терморезистор в обрыве
-const int THERMO_RESIST_MIN = 540; // ~27 degrees Celsius
-// const int THERMO_RESIST_MAX = 820; // ~70 degrees Celsius
-const int THERMO_RESIST_MAX = 910; // ~100 degrees Celsius
+/*
+// Pin config for ATtiny13A:
+#define VAR_RESISTOR 3 // ADC3 on ATtiny13 (pin 2)
+#define THERMO_RESISTOR 2 // ADC2 on ATtiny13 (pin 3)
+#define HEATER_VT 0 // PB0 on ATtiny13 (pin 5)
+#define FAULT_LED PB1 // PB1 on ATtiny13 (pin 6)
+*/
 
-const byte HYSTERESIS = 10;
+#define VAR_RESIST_MIN 0
+#define VAR_RESIST_MAX 1023
+
+#define THERMO_RESIST_FAULT 300 // ниже этого значения считаем терморезистор в обрыве
+#define THERMO_RESIST_MIN 540 // ~27 degrees Celsius
+// #define THERMO_RESIST_MAX 820 // ~70 degrees Celsius
+#define THERMO_RESIST_MAX 910 // ~100 degrees Celsius
+
+#define HYSTERESIS 10
 
 
 long convertToThermoResist(long varResist) {
@@ -36,7 +47,7 @@ void setup() {
 }
 
 void loop() {
-    long thermoResist = analogRead(THERMO_RESISTOR);
+    int thermoResist = analogRead(THERMO_RESISTOR);
     Serial.print("thermo: ");
     Serial.print(thermoResist);
 
@@ -47,7 +58,7 @@ void loop() {
     } else {
         digitalWrite(FAULT_LED, LOW);
 
-        long varResist = analogRead(VAR_RESISTOR);
+        int varResist = analogRead(VAR_RESISTOR);
         Serial.print("  var: ");
         Serial.print(varResist);
 
@@ -70,5 +81,5 @@ void loop() {
     }
 
     Serial.println("");
-    delay(500);
+    _delay_ms(500);
 }
