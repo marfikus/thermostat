@@ -6,14 +6,14 @@
 #define REGULATOR A0
 #define SENSOR A1
 #define HEATER 2
-#define FAULT_LED 3
+#define LED 3
 */
 
 // Pin config for ATtiny13A:
 #define REGULATOR 3 // ADC3 on ATtiny13 (pin 2)
 #define SENSOR 2 // ADC2 on ATtiny13 (pin 3)
 #define HEATER 0 // PB0 on ATtiny13 (pin 5)
-#define FAULT_LED PB1 // PB1 on ATtiny13 (pin 6)
+#define LED PB1 // PB1 on ATtiny13 (pin 6)
 
 
 #define REGULATOR_MIN 0
@@ -26,6 +26,38 @@
 
 #define HYSTERESIS 10
 
+bool ledIsOn = false;
+
+
+void turnOnHeater() {
+    // digitalWrite(HEATER, HIGH); // for Arduino
+    PORTB |= (1 << HEATER); // for ATtiny13A
+}
+
+void turnOffHeater() {
+    // digitalWrite(HEATER, LOW); // for Arduino
+    PORTB &= ~(1 << HEATER); // for ATtiny13A
+}
+
+void turnOnLed() {
+    // digitalWrite(LED, HIGH); // for Arduino
+    PORTB |= (1 << LED); // for ATtiny13A
+    ledIsOn = true;
+}
+
+void turnOffLed() {
+    // digitalWrite(LED, LOW); // for Arduino
+    PORTB &= ~(1 << LED); // for ATtiny13A
+    ledIsOn = false;
+}
+
+void toggleLed() {
+    if (ledIsOn) {
+        turnOffLed();
+    } else {
+        turnOnLed();
+    }
+}
 
 long mapToSensorValue(long regulatorValue) {
     long mapped = ((regulatorValue - REGULATOR_MIN) * (SENSOR_MAX - SENSOR_MIN) 
@@ -34,13 +66,28 @@ long mapToSensorValue(long regulatorValue) {
 }
 
 void setup() {
+/*
+    // for Arduino:
     pinMode(REGULATOR, INPUT);
     pinMode(SENSOR, INPUT);
     pinMode(HEATER, OUTPUT);
-    pinMode(FAULT_LED, OUTPUT);
+    pinMode(LED, OUTPUT);
 
     digitalWrite(HEATER, LOW);
-    digitalWrite(FAULT_LED, LOW);
+    digitalWrite(LED, LOW);
+*/
+
+    // for ATtiny13A:
+    DDRB &= ~(1 << REGULATOR);
+    DDRB &= ~(1 << SENSOR);
+    DDRB |= (1 << HEATER);
+    DDRB |= (1 << LED);
+
+    PORTB &= ~(1 << HEATER);
+    PORTB &= ~(1 << LED);
+
+
+    ledIsOn = false;
 
     // Serial.begin(9600);
     // Serial.println("ready");
@@ -52,11 +99,10 @@ void loop() {
     // Serial.print(sensorValue);
 
     if (sensorValue < SENSOR_FAULT) {
-        digitalWrite(HEATER, LOW);
-        digitalWrite(FAULT_LED, HIGH);
+        turnOffHeater();
+        toggleLed();
         // Serial.print(" Temp sensor fault!");
     } else {
-        digitalWrite(FAULT_LED, LOW);
 
         int regulatorValue = analogRead(REGULATOR);
         // Serial.print("  regulator: ");
@@ -68,15 +114,18 @@ void loop() {
             // Serial.print(mappedRegulatorValue);
 
             if (sensorValue - HYSTERESIS >= mappedRegulatorValue) {
-                digitalWrite(HEATER, LOW);
+                turnOffHeater();
+                turnOffLed();
                 // Serial.print("  heater is off");
             } else if (sensorValue + HYSTERESIS <= mappedRegulatorValue) {
-                digitalWrite(HEATER, HIGH);
+                turnOnHeater();
+                turnOnLed();
                 // Serial.print("  heater is on");
             }
 
         } else {
-            digitalWrite(HEATER, LOW);
+            turnOffHeater();
+            turnOffLed();
         }
     }
 
