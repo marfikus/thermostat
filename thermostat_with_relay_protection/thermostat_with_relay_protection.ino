@@ -49,35 +49,35 @@ long mapToSensorValue(long regulatorValue) {
 
 void turnOnHeater() {
     if (!heaterIsOn) {
-        digitalWrite(HEATER_TRIAC, HIGH);
-        // PORTB |= (1 << HEATER_TRIAC); // digitalWrite(HEATER_TRIAC, HIGH);
+        digitalWrite(HEATER_TRIAC, HIGH); // for Arduino
+        // PORTB |= (1 << HEATER_TRIAC); // for ATtiny13A
         _delay_ms(500);
-        digitalWrite(HEATER_RELAY, HIGH);
-        // PORTB |= (1 << HEATER_RELAY); // digitalWrite(HEATER_RELAY, HIGH);
+        digitalWrite(HEATER_RELAY, HIGH); // for Arduino
+        // PORTB |= (1 << HEATER_RELAY); // for ATtiny13A
         heaterIsOn = true;
     }
 }
 
 void turnOffHeater() {
     if (heaterIsOn) {
-        digitalWrite(HEATER_RELAY, LOW);
-        // PORTB &= ~(1 << HEATER_RELAY); // digitalWrite(HEATER_RELAY, LOW);
+        digitalWrite(HEATER_RELAY, LOW); // for Arduino
+        // PORTB &= ~(1 << HEATER_RELAY); // for ATtiny13A
         _delay_ms(500);
-        digitalWrite(HEATER_TRIAC, LOW);
-        // PORTB &= ~(1 << HEATER_TRIAC); // digitalWrite(HEATER_TRIAC, LOW);
+        digitalWrite(HEATER_TRIAC, LOW); // for Arduino
+        // PORTB &= ~(1 << HEATER_TRIAC); // for ATtiny13A
         heaterIsOn = false;
     }
 }
 
 void turnOnLed() {
-    digitalWrite(LED, HIGH);
-    // PORTB |= (1 << LED);
+    digitalWrite(LED, HIGH); // for Arduino
+    // PORTB |= (1 << LED); // for ATtiny13A
     ledIsOn = true;
 }
 
 void turnOffLed() {
-    digitalWrite(LED, LOW);
-    // PORTB &= ~(1 << LED); // digitalWrite(LED, LOW);
+    digitalWrite(LED, LOW); // for Arduino
+    // PORTB &= ~(1 << LED); // for ATtiny13A
     ledIsOn = false;
 }
 
@@ -90,23 +90,31 @@ void toggleLed() {
 }
 
 void setup() {
+
+    // for Arduino:
     pinMode(REGULATOR, INPUT);
-    // DDRB &= ~(1 << REGULATOR); // pinMode(REGULATOR, INPUT);
     pinMode(SENSOR, INPUT);
-    // DDRB &= ~(1 << SENSOR); // pinMode(SENSOR, INPUT);
     pinMode(HEATER_RELAY, OUTPUT);
-    // DDRB |= (1 << HEATER_RELAY); // pinMode(HEATER_RELAY, OUTPUT);
     pinMode(HEATER_TRIAC, OUTPUT);
-    // DDRB |= (1 << HEATER_TRIAC); // pinMode(HEATER_TRIAC, OUTPUT);
     pinMode(LED, OUTPUT);
-    // DDRB |= (1 << LED); // pinMode(LED, OUTPUT);
 
     digitalWrite(HEATER_RELAY, LOW);
-    // PORTB &= ~(1 << HEATER_RELAY); // digitalWrite(HEATER_RELAY, LOW);
     digitalWrite(HEATER_TRIAC, LOW);
-    // PORTB &= ~(1 << HEATER_TRIAC); // digitalWrite(HEATER_TRIAC, LOW);
     digitalWrite(LED, LOW);
-    // PORTB &= ~(1 << LED); // digitalWrite(LED, LOW);
+
+/*
+    // for ATtiny13A:
+    DDRB &= ~(1 << REGULATOR);
+    DDRB &= ~(1 << SENSOR);
+    DDRB |= (1 << HEATER_RELAY);
+    DDRB |= (1 << HEATER_TRIAC);
+    DDRB |= (1 << LED);
+
+    PORTB &= ~(1 << HEATER_RELAY);
+    PORTB &= ~(1 << HEATER_TRIAC);
+    PORTB &= ~(1 << LED);
+*/
+
     heaterIsOn = false;
     ledIsOn = false;
 
