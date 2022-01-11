@@ -5,22 +5,22 @@
 
 #include <util/delay.h>
 
-/*
+
 // Pin config for Arduino (ATmega328P):
 #define REGULATOR A0
 #define SENSOR A1
 #define UP_LIMIT_ADJUSTER A2
 #define HEATER 2
-#define FAULT_LED 3
-*/
+#define LED 3
 
+/*
 // Pin config for ATtiny13A:
 #define REGULATOR 3 // ADC3 on ATtiny13 (pin 2)
 #define SENSOR 2 // ADC2 on ATtiny13 (pin 3)
 #define UP_LIMIT_ADJUSTER 1 // ADC1 on ATtiny13 (pin 7)
 #define HEATER 0 // PB0 on ATtiny13 (pin 5)
-#define FAULT_LED PB1 // PB1 on ATtiny13 (pin 6)
-
+#define LED PB1 // PB1 on ATtiny13 (pin 6)
+*/
 
 // диапазон значений переменного резистора:
 #define VAR_RESISTOR_MIN 0
@@ -35,6 +35,38 @@
 
 #define HYSTERESIS 10
 
+bool ledIsOn = false;
+
+
+void turnOnHeater() {
+    digitalWrite(HEATER, HIGH); // for Arduino
+    // PORTB |= (1 << HEATER); // for ATtiny13A
+}
+
+void turnOffHeater() {
+    digitalWrite(HEATER, LOW); // for Arduino
+    // PORTB &= ~(1 << HEATER); // for ATtiny13A
+}
+
+void turnOnLed() {
+    digitalWrite(LED, HIGH); // for Arduino
+    // PORTB |= (1 << LED); // for ATtiny13A
+    ledIsOn = true;
+}
+
+void turnOffLed() {
+    digitalWrite(LED, LOW); // for Arduino
+    // PORTB &= ~(1 << LED); // for ATtiny13A
+    ledIsOn = false;
+}
+
+void toggleLed() {
+    if (ledIsOn) {
+        turnOffLed();
+    } else {
+        turnOnLed();
+    }
+}
 
 long mapAdjusterToSensorValue(long adjusterValue) {
     long mapped = ((adjusterValue - VAR_RESISTOR_MIN) * (UP_LIMIT_MAX - UP_LIMIT_MIN) 
@@ -44,11 +76,11 @@ long mapAdjusterToSensorValue(long adjusterValue) {
 
 long mapToSensorValue(long regulatorValue) {
     int adjusterValue = analogRead(UP_LIMIT_ADJUSTER);
-    // Serial.print("  adjuster: ");
-    // Serial.print(adjusterValue);
+    Serial.print("  adjuster: ");
+    Serial.print(adjusterValue);
     long sensorMax = mapAdjusterToSensorValue(adjusterValue);
-    // Serial.print("  sensorMax: ");
-    // Serial.print(sensorMax);
+    Serial.print("  sensorMax: ");
+    Serial.print(sensorMax);
 
     long mapped = ((regulatorValue - VAR_RESISTOR_MIN) * (sensorMax - SENSOR_MIN) 
         / (VAR_RESISTOR_MAX - VAR_RESISTOR_MIN)) + SENSOR_MIN;
@@ -56,53 +88,71 @@ long mapToSensorValue(long regulatorValue) {
 }
 
 void setup() {
+
+    // for Arduino:
     pinMode(REGULATOR, INPUT);
     pinMode(SENSOR, INPUT);
     pinMode(UP_LIMIT_ADJUSTER, INPUT);
     pinMode(HEATER, OUTPUT);
-    pinMode(FAULT_LED, OUTPUT);
+    pinMode(LED, OUTPUT);
 
     digitalWrite(HEATER, LOW);
-    digitalWrite(FAULT_LED, LOW);
+    digitalWrite(LED, LOW);
 
-    // Serial.begin(9600);
-    // Serial.println("ready");
+/*
+    // for ATtiny13A:
+    DDRB &= ~(1 << REGULATOR);
+    DDRB &= ~(1 << SENSOR);
+    DDRB &= ~(1 << UP_LIMIT_ADJUSTER);
+    DDRB |= (1 << HEATER);
+    DDRB |= (1 << LED);
+
+    PORTB &= ~(1 << HEATER);
+    PORTB &= ~(1 << LED);
+*/
+
+    ledIsOn = false;
+
+    Serial.begin(9600);
+    Serial.println("ready");
 }
 
 void loop() {
     int sensorValue = analogRead(SENSOR);
-    // Serial.print("sensor: ");
-    // Serial.print(sensorValue);
+    Serial.print("sensor: ");
+    Serial.print(sensorValue);
 
     if (sensorValue < SENSOR_FAULT) {
-        digitalWrite(HEATER, LOW);
-        digitalWrite(FAULT_LED, HIGH);
-        // Serial.print(" Temp sensor fault!");
+        turnOffHeater();
+        toggleLed();
+        Serial.print(" Temp sensor fault!");
     } else {
-        digitalWrite(FAULT_LED, LOW);
 
         int regulatorValue = analogRead(REGULATOR);
-        // Serial.print("  regulator: ");
-        // Serial.print(regulatorValue);
+        Serial.print("  regulator: ");
+        Serial.print(regulatorValue);
 
         if (regulatorValue > 0) {
             long mappedRegulatorValue = mapToSensorValue(regulatorValue);
-            // Serial.print("  mappedRegulator: ");
-            // Serial.print(mappedRegulatorValue);
+            Serial.print("  mappedRegulator: ");
+            Serial.print(mappedRegulatorValue);
 
             if (sensorValue - HYSTERESIS >= mappedRegulatorValue) {
-                digitalWrite(HEATER, LOW);
-                // Serial.print("  heater is off");
+                turnOffHeater();
+                turnOffLed();
+                Serial.print("  heater is off");
             } else if (sensorValue + HYSTERESIS <= mappedRegulatorValue) {
-                digitalWrite(HEATER, HIGH);
-                // Serial.print("  heater is on");
+                turnOnHeater();
+                turnOnLed();
+                Serial.print("  heater is on");
             }
 
         } else {
-            digitalWrite(HEATER, LOW);
+            turnOffHeater();
+            turnOffLed();
         }
     }
 
-    // Serial.println("");
+    Serial.println("");
     _delay_ms(500);
 }

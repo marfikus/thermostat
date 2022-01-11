@@ -16,7 +16,7 @@
 #define SENSOR A1
 #define HEATER_RELAY 2
 #define HEATER_TRIAC 3
-#define FAULT_LED 4
+#define LED 4
 */
 
 // Pin config for ATtiny13A:
@@ -24,7 +24,7 @@
 #define SENSOR 2 // ADC2 on ATtiny13 (pin 3)
 #define HEATER_RELAY PB0 // PB0 on ATtiny13 (pin 5)
 #define HEATER_TRIAC PB1 // PB1 on ATtiny13 (pin 6)
-#define FAULT_LED PB2 // PB2 on ATtiny13 (pin 7)
+#define LED PB2 // PB2 on ATtiny13 (pin 7)
 
 
 #define REGULATOR_MIN 0
@@ -37,6 +37,9 @@
 
 #define HYSTERESIS 10
 
+bool heaterIsOn = false;
+bool ledIsOn = false;
+
 
 long mapToSensorValue(long regulatorValue) {
     long mapped = ((regulatorValue - REGULATOR_MIN) * (SENSOR_MAX - SENSOR_MIN) 
@@ -45,27 +48,75 @@ long mapToSensorValue(long regulatorValue) {
 }
 
 void turnOnHeater() {
-    digitalWrite(HEATER_TRIAC, HIGH);
-    _delay_ms(500);
-    digitalWrite(HEATER_RELAY, HIGH);
+    if (!heaterIsOn) {
+        // digitalWrite(HEATER_TRIAC, HIGH); // for Arduino
+        PORTB |= (1 << HEATER_TRIAC); // for ATtiny13A
+        _delay_ms(500);
+        // digitalWrite(HEATER_RELAY, HIGH); // for Arduino
+        PORTB |= (1 << HEATER_RELAY); // for ATtiny13A
+        heaterIsOn = true;
+    }
 }
 
 void turnOffHeater() {
-    digitalWrite(HEATER_RELAY, LOW);
-    _delay_ms(500);
-    digitalWrite(HEATER_TRIAC, LOW);
+    if (heaterIsOn) {
+        // digitalWrite(HEATER_RELAY, LOW); // for Arduino
+        PORTB &= ~(1 << HEATER_RELAY); // for ATtiny13A
+        _delay_ms(500);
+        // digitalWrite(HEATER_TRIAC, LOW); // for Arduino
+        PORTB &= ~(1 << HEATER_TRIAC); // for ATtiny13A
+        heaterIsOn = false;
+    }
+}
+
+void turnOnLed() {
+    // digitalWrite(LED, HIGH); // for Arduino
+    PORTB |= (1 << LED); // for ATtiny13A
+    ledIsOn = true;
+}
+
+void turnOffLed() {
+    // digitalWrite(LED, LOW); // for Arduino
+    PORTB &= ~(1 << LED); // for ATtiny13A
+    ledIsOn = false;
+}
+
+void toggleLed() {
+    if (ledIsOn) {
+        turnOffLed();
+    } else {
+        turnOnLed();
+    }
 }
 
 void setup() {
+/*
+    // for Arduino:
     pinMode(REGULATOR, INPUT);
     pinMode(SENSOR, INPUT);
     pinMode(HEATER_RELAY, OUTPUT);
     pinMode(HEATER_TRIAC, OUTPUT);
-    pinMode(FAULT_LED, OUTPUT);
+    pinMode(LED, OUTPUT);
 
     digitalWrite(HEATER_RELAY, LOW);
     digitalWrite(HEATER_TRIAC, LOW);
-    digitalWrite(FAULT_LED, LOW);
+    digitalWrite(LED, LOW);
+*/
+
+    // for ATtiny13A:
+    DDRB &= ~(1 << REGULATOR);
+    DDRB &= ~(1 << SENSOR);
+    DDRB |= (1 << HEATER_RELAY);
+    DDRB |= (1 << HEATER_TRIAC);
+    DDRB |= (1 << LED);
+
+    PORTB &= ~(1 << HEATER_RELAY);
+    PORTB &= ~(1 << HEATER_TRIAC);
+    PORTB &= ~(1 << LED);
+
+
+    heaterIsOn = false;
+    ledIsOn = false;
 
     // Serial.begin(9600);
     // Serial.println("ready");
@@ -78,10 +129,9 @@ void loop() {
 
     if (sensorValue < SENSOR_FAULT) {
         turnOffHeater();
-        digitalWrite(FAULT_LED, HIGH);
+        toggleLed();
         // Serial.print(" Temp sensor fault!");
     } else {
-        digitalWrite(FAULT_LED, LOW);
 
         int regulatorValue = analogRead(REGULATOR);
         // Serial.print("  regulator: ");
@@ -94,14 +144,17 @@ void loop() {
 
             if (sensorValue - HYSTERESIS >= mappedRegulatorValue) {
                 turnOffHeater();
+                turnOffLed();
                 // Serial.print("  HEATER is off");
             } else if (sensorValue + HYSTERESIS <= mappedRegulatorValue) {
                 turnOnHeater();
+                turnOnLed();
                 // Serial.print("  HEATER is on");
             }
 
         } else {
             turnOffHeater();
+            turnOffLed();
         }
     }
 
