@@ -33,9 +33,12 @@
 #define UP_LIMIT_MIN 700 // ~50 degrees Celsius
 #define UP_LIMIT_MAX 910 // ~100 degrees Celsius
 
-#define HYSTERESIS 10
+#define HYSTERESIS 0
+#define TRIGGER_COUNTER_MAX 2 // количество срабатываний по достижению пороговой температуры (защита от ложных)
 
 bool ledIsOn = false;
+byte upTriggerCounter = 0;
+byte downTriggerCounter = 0;
 
 
 void turnOnHeater() {
@@ -112,6 +115,8 @@ void setup() {
 */
 
     ledIsOn = false;
+    upTriggerCounter = 0;
+    downTriggerCounter = 0;
 
     Serial.begin(9600);
     Serial.println("ready");
@@ -125,6 +130,8 @@ void loop() {
     if (sensorValue < SENSOR_FAULT) {
         turnOffHeater();
         toggleLed();
+        upTriggerCounter = 0;
+        downTriggerCounter = 0;
         Serial.print(" Temp sensor fault!");
     } else {
 
@@ -137,19 +144,38 @@ void loop() {
             Serial.print("  mappedRegulator: ");
             Serial.print(mappedRegulatorValue);
 
-            if (sensorValue - HYSTERESIS >= mappedRegulatorValue) {
-                turnOffHeater();
-                turnOffLed();
-                Serial.print("  heater is off");
-            } else if (sensorValue + HYSTERESIS <= mappedRegulatorValue) {
-                turnOnHeater();
-                turnOnLed();
-                Serial.print("  heater is on");
+            if (sensorValue - HYSTERESIS > mappedRegulatorValue) {
+                downTriggerCounter = 0;
+                upTriggerCounter++;
+
+                if (upTriggerCounter >= TRIGGER_COUNTER_MAX) {
+                    turnOffHeater();
+                    turnOffLed();
+                    upTriggerCounter = 0;
+                    Serial.print("  heater is off");
+                }
+
+            } else if (sensorValue + HYSTERESIS < mappedRegulatorValue) {
+                upTriggerCounter = 0;
+                downTriggerCounter++;
+
+                if (downTriggerCounter >= TRIGGER_COUNTER_MAX) {
+                    turnOnHeater();
+                    turnOnLed();
+                    downTriggerCounter = 0;
+                    Serial.print("  heater is on");
+                }
+
+            } else { // если в зоне гистерезиса
+                upTriggerCounter = 0;
+                downTriggerCounter = 0;
             }
 
         } else {
             turnOffHeater();
             turnOffLed();
+            upTriggerCounter = 0;
+            downTriggerCounter = 0;
         }
     }
 
