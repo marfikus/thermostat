@@ -32,8 +32,8 @@
 
 #define SENSOR_FAULT 300 // ниже этого значения считаем терморезистор в обрыве
 #define SENSOR_MIN 540 // ~27 degrees Celsius
-#define SENSOR_MAX 820 // ~70 degrees Celsius
-// #define SENSOR_MAX 910 // ~100 degrees Celsius
+// #define SENSOR_MAX 820 // ~70 degrees Celsius
+#define SENSOR_MAX 910 // ~100 degrees Celsius
 
 #define HYSTERESIS 10
 
