@@ -34,7 +34,7 @@
 #define UP_LIMIT_MAX 910 // ~100 degrees Celsius
 
 #define HYSTERESIS 0
-#define TRIGGER_COUNTER_MAX 3 // количество срабатываний по достижению пороговой температуры (защита от ложных)
+#define TRIGGER_COUNTER_MAX 5 // количество срабатываний по достижению пороговой температуры (защита от ложных)
 
 bool ledIsOn = false;
 byte upTriggerCounter = 0;
