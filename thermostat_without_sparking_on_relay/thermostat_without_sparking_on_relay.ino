@@ -39,6 +39,7 @@
 #define TRIGGER_COUNTER_MAX 5 // количество срабатываний по достижению пороговой температуры (защита от ложных)
 
 #define MAIN_LOOP_DELAY_MS 500
+#define TRIAC_WORK_TIME_MS 500
 
 bool heaterIsOn = false;
 bool ledIsOn = false;
@@ -56,7 +57,7 @@ void turnOnHeater() {
     if (!heaterIsOn) {
         // digitalWrite(HEATER_TRIAC, HIGH); // for Arduino
         PORTB |= (1 << HEATER_TRIAC); // for ATtiny13A
-        _delay_ms(500);
+        _delay_ms(TRIAC_WORK_TIME_MS);
         // digitalWrite(HEATER_RELAY, HIGH); // for Arduino
         PORTB |= (1 << HEATER_RELAY); // for ATtiny13A
         heaterIsOn = true;
@@ -67,7 +68,7 @@ void turnOffHeater() {
     if (heaterIsOn) {
         // digitalWrite(HEATER_RELAY, LOW); // for Arduino
         PORTB &= ~(1 << HEATER_RELAY); // for ATtiny13A
-        _delay_ms(500);
+        _delay_ms(TRIAC_WORK_TIME_MS);
         // digitalWrite(HEATER_TRIAC, LOW); // for Arduino
         PORTB &= ~(1 << HEATER_TRIAC); // for ATtiny13A
         heaterIsOn = false;
