@@ -36,6 +36,8 @@
 #define HYSTERESIS 0
 #define TRIGGER_COUNTER_MAX 5 // количество срабатываний по достижению пороговой температуры (защита от ложных)
 
+#define MAIN_LOOP_DELAY_MS 500
+
 bool ledIsOn = false;
 byte upTriggerCounter = 0;
 byte downTriggerCounter = 0;
@@ -180,5 +182,5 @@ void loop() {
     }
 
     Serial.println("");
-    _delay_ms(500);
+    _delay_ms(MAIN_LOOP_DELAY_MS);
 }
